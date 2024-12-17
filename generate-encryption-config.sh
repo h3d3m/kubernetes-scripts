@@ -11,6 +11,7 @@ generate_encryption_config() {
 	local DIR=$1
 	local KEY=$(head -c 32 /dev/urandom | base64)
 
+	echo "---"
 	echo "Generating encryption config..."
 	cat > ${DIR}/encryption-config.yaml <<EOF
 kind: EncryptionConfig
