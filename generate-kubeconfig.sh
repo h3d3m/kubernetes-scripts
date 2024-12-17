@@ -14,54 +14,45 @@ generate_kubeconfig() {
 
 	echo "---"
 	echo "Generating kubeconfig for ${NAME}..."
-	if [[ "${NAME}" == "kube-proxy" ]]; then
-		local LB=$(yq e ".cluster.ips[] | select(.name == \"loadbalancer\").value" ${ENV_FILE})
-		kubectl config set-cluster kubernetes-the-hard-way \
-    	--certificate-authority=${OUT_DIR}/pki/ca.crt \
-    	--server=https://${LB}:6443 \
-    	--kubeconfig=${OUT_DIR}/${NAME}.conf
-
+	if [[ "${NAME}" == "kube-controller-manager" ]] || [[ "${NAME}" == "kube-scheduler" ]] || [[ "${NAME}" == "kube-proxy" ]]; then
+		if [[ "${NAME}" == "kube-proxy" ]]; then
+			local LB=$(yq e ".cluster.ips[] | select(.name == \"loadbalancer\").value" ${ENV_FILE})
+			kubectl config set-cluster kubernetes-the-hard-way \
+				--certificate-authority=${OUT_DIR}/pki/ca.crt \
+				--server=https://${LB}:6443 \
+				--kubeconfig=${OUT_DIR}/${NAME}.conf
+		else
+			kubectl config set-cluster kubernetes-the-hard-way \
+				--certificate-authority=${OUT_DIR}/pki/ca.crt \
+				--server=https://127.0.0.1:6443 \
+				--kubeconfig=${OUT_DIR}/${NAME}.conf
+		fi	
 		kubectl config set-credentials system:${NAME} \
-    	--client-certificate=${OUT_DIR}/pki/${NAME}.crt \
-    	--client-key=${OUT_DIR}/pki/${NAME}.key \
-    	--kubeconfig=${OUT_DIR}/${NAME}.conf
+			--client-certificate=${OUT_DIR}/pki/${NAME}.crt \
+			--client-key=${OUT_DIR}/pki/${NAME}.key \
+			--kubeconfig=${OUT_DIR}/${NAME}.conf
 
 		kubectl config set-context default \
-    	--cluster=kubernetes-the-hard-way \
-    	--user=system:${NAME} \
-    	--kubeconfig=${OUT_DIR}/${NAME}.conf
-	elif [[ "${NAME}" == "kube-controller-manager" ]] || [[ "${NAME}" == "kube-scheduler" ]]; then	
-		kubectl config set-cluster kubernetes-the-hard-way \
-    	--certificate-authority=${OUT_DIR}/pki/ca.crt \
-    	--server=https://127.0.0.1:6443 \
-    	--kubeconfig=${OUT_DIR}/${NAME}.conf
-
-		kubectl config set-credentials system:${NAME} \
-    	--client-certificate=${OUT_DIR}/pki/${NAME}.crt \
-    	--client-key=${OUT_DIR}/pki/${NAME}.key \
-    	--kubeconfig=${OUT_DIR}/${NAME}.conf
-
-		kubectl config set-context default \
-    	--cluster=kubernetes-the-hard-way \
-    	--user=system:${NAME} \
-    	--kubeconfig=${OUT_DIR}/${NAME}.conf
+			--cluster=kubernetes-the-hard-way \
+			--user=system:${NAME} \
+			--kubeconfig=${OUT_DIR}/${NAME}.conf
 	elif [[ "${NAME}" == "admin" ]]; then
 		kubectl config set-cluster kubernetes-the-hard-way \
-    	--certificate-authority=${OUT_DIR}/pki/ca.crt \
-    	--embed-certs=true \
-    	--server=https://127.0.0.1:6443 \
-    	--kubeconfig=${OUT_DIR}/${NAME}.conf
+			--certificate-authority=${OUT_DIR}/pki/ca.crt \
+			--embed-certs=true \
+			--server=https://127.0.0.1:6443 \
+			--kubeconfig=${OUT_DIR}/${NAME}.conf
 
-  	kubectl config set-credentials ${NAME} \
-    	--client-certificate=${OUT_DIR}/pki/${NAME}.crt \
-    	--client-key=${OUT_DIR}/pki/${NAME}.key \
-    	--embed-certs=true \
-    	--kubeconfig=${OUT_DIR}/${NAME}.conf
+		kubectl config set-credentials ${NAME} \
+			--client-certificate=${OUT_DIR}/pki/${NAME}.crt \
+			--client-key=${OUT_DIR}/pki/${NAME}.key \
+			--embed-certs=true \
+			--kubeconfig=${OUT_DIR}/${NAME}.conf
 
 		kubectl config set-context default \
-    	--cluster=kubernetes-the-hard-way \
-    	--user=${NAME} \
-    	--kubeconfig=${OUT_DIR}/${NAME}.conf
+			--cluster=kubernetes-the-hard-way \
+			--user=${NAME} \
+			--kubeconfig=${OUT_DIR}/${NAME}.conf
 	fi
 	kubectl config use-context default --kubeconfig=${OUT_DIR}/${NAME}.conf
 	echo -e "${OK}"
